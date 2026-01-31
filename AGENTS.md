@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-ESP32-S3 N16R8 firmware with React web interface. PlatformIO project for motor control device with WiFi configuration, encoder reading, current sensing, and UDP discovery.
+ESP32-S3 N16R8 firmware with React web interface. PlatformIO project for motor control device with WiFi configuration, encoder reading, current sensing, and MQTT broker.
 
 ## Build Commands
 
@@ -166,8 +166,9 @@ AFDevice/
 │   │   └── CurrentSensor.h     # Current sensing (ADC)
 │   ├── network/           # Network services
 │   │   ├── WebServer.h    # HTTP server (ESPAsyncWebServer)
-│   │   ├── WiFiManager.h  # WiFi configuration
-│   │   └── UdpDiscovery.h # UDP server discovery
+│   │   ├── WiFiManager.h  # WiFi configuration with auto-reconnect
+│   │   ├── MqttBroker.h   # MQTT broker (PicoMQTT)
+│   │   └── MqttController.h # MQTT message handler
 │   └── protocol/          # Binary protocols
 │       └── Packets.h      # Data packet structures
 ├── frontend/              # React web interface
@@ -196,6 +197,13 @@ AFDevice/
 - **Flash Mode**: QIO 80MHz
 - **Upload Speed**: 115200 baud
 
+## Pinout
+
+- **Motor**: Pin 4 (PWM), 5 (DIR), 6 (EN)
+- **Encoder**: Pin 15 (A), 16 (B)
+- **Buttons**: Pin 10 (Up), 11 (Down), 12 (Setup)
+- **Current Sensor**: Pin 7 (ADC)
+
 ## Dependencies
 
 ### C++ Libraries
@@ -206,6 +214,7 @@ AFDevice/
 - `mathieucarbou/AsyncTCP` (GitHub)
 - `mathieucarbou/ESPAsyncWebServer` (GitHub)
 - `bblanchon/ArduinoJson` ^7.4.2
+- `mlesniew/PicoMQTT` ^1.3.0
 
 ### NPM Packages
 - React 19 + TypeScript 5.9
@@ -215,12 +224,53 @@ AFDevice/
 - Zod for validation
 - lucide-react for icons
 
+## MQTT Topics
+
+- `hub/cmd/motor` - Motor commands (forward/backward/stop/set with speed)
+- `hub/cmd/config` - Configuration commands (e.g., speed parameter)
+- `hub/telemetry` - Telemetry data (encoder, current, motorSpeed, wifiConnected)
+- `hub/status` - Device status (online/offline)
+
+## WiFi Modes
+
+1. **STA Mode**: Connects to saved WiFi network, auto-reconnects every 5 seconds
+2. **Setup Mode**: AP mode activated by holding Setup button for 5 seconds
+   - AP Name: "AlexFil Developer"
+   - IP: 192.168.4.1
+   - Web interface available for WiFi configuration
+
 ## Important Notes
 
 - The frontend is auto-built and compressed during `uploadfs` target
 - Gzipped files are served with `Content-Encoding: gzip` header
 - Device acts as AP (192.168.4.1) for initial configuration
-- UDP discovery uses port 3333 with binary protocol
+- MQTT broker runs only when WiFi is connected to save CPU
 - All hardware modules update via `DeviceState` reference
-- Serial monitor at 115200 baud for debugging
+- Serial monitor at 115200 baud for debugging (use Serial0 for ESP32-S3)
 - Russian language acceptable for UI and comments
+- WiFi auto-reconnect: 15s timeout, 5s delay between retries
+- MQTT telemetry publishes every 1 second
+- mDNS service advertised at hub.local:1883
+
+## Architecture Pattern
+
+```cpp
+// Main loop execution order (App.loop):
+1. wifi.update(state)     // Network connection handling
+2. web.update(state)      // Async web server (no-op for ESPAsyncWebServer)
+3. mqtt.update(state)     // MQTT broker (conditional on WiFi)
+4. buttons.update(state)  // Input handling
+5. encoder.update(state)  // Sensor reading
+6. current.update(state)  // ADC reading
+7. motor.update(state)    // Output control
+```
+
+## Event Flow
+
+```
+[Buttons/MQTT/Web] → DeviceState → [Motor/LED/Display]
+     ↓                      ↑
+[Hardware Events]      [State Changes]
+```
+
+All modules read/write to shared DeviceState. Motor controller reads motorSpeed from state and applies it to hardware. Buttons and MQTT write to motorSpeed based on user input.
