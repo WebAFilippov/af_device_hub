@@ -69,7 +69,7 @@ void WiFiManager::update(DeviceState &state)
                 // Waiting to retry - check if delay passed
                 if (millis() - lastReconnectAttempt >= Config::WiFi::RECONNECT_DELAY_MS)
                 {
-                    Serial0.println(Config::Debug::LOG_WIFI " Retrying connection...");
+                    Serial0.printf("%s Retrying connection...\n", Config::Debug::LOG_WIFI);
                     isReconnectPending = false;
                     connectStartTime = millis();
                     connectSTA(state.savedSsid, prefs.getString("pass", ""));
@@ -84,7 +84,7 @@ void WiFiManager::update(DeviceState &state)
             else if (millis() - connectStartTime > Config::WiFi::CONNECT_TIMEOUT_MS)
             {
                 // Timeout - disconnect and schedule retry
-                Serial0.println(Config::Debug::LOG_WIFI " Connect timeout. Will retry in " + String(Config::WiFi::RECONNECT_DELAY_MS / 1000) + " seconds...");
+                Serial0.printf("%s Connect timeout. Will retry in %d seconds...\n", Config::Debug::LOG_WIFI, Config::WiFi::RECONNECT_DELAY_MS / 1000);
                 WiFi.disconnect();
                 isReconnectPending = true;
                 lastReconnectAttempt = millis();
@@ -107,13 +107,13 @@ void WiFiManager::enableSetupMode()
         setupModeStartTime = millis();
         lastActivityTime = millis();
         startAP();
-        Serial0.println(Config::Debug::LOG_WIFI " Setup mode enabled (AP active for " + String(Config::WiFi::SETUP_MODE_TIMEOUT_MS / 60000) + " minutes)");
+        Serial0.printf("%s Setup mode enabled (AP active for %d minutes)\n", Config::Debug::LOG_WIFI, Config::WiFi::SETUP_MODE_TIMEOUT_MS / 60000);
     }
     else
     {
         // Reset activity timer on button press
         lastActivityTime = millis();
-        Serial0.println(Config::Debug::LOG_WIFI " Activity detected, resetting timeout");
+        Serial0.printf("%s Activity detected, resetting timeout\n", Config::Debug::LOG_WIFI);
     }
 }
 
@@ -121,7 +121,7 @@ void WiFiManager::checkActivityTimeout()
 {
     if (setupModeActive && millis() - lastActivityTime > Config::WiFi::SETUP_MODE_TIMEOUT_MS)
     {
-        Serial0.println(Config::Debug::LOG_WIFI " Setup mode timeout - disabling AP");
+        Serial0.printf("%s Setup mode timeout - disabling AP\n", Config::Debug::LOG_WIFI);
         stopAP();
         setupModeActive = false;
 
@@ -144,7 +144,7 @@ void WiFiManager::startAP()
     if (WiFi.softAP(Config::WiFi::AP_SSID, Config::WiFi::AP_PASSWORD, Config::WiFi::AP_CHANNEL, 0, Config::WiFi::AP_MAX_CONNECTIONS))
     {
         apEnabled = true;
-        Serial0.println(Config::Debug::LOG_WIFI " AP started: 192.168.4.1");
+        Serial0.printf("%s AP started: 192.168.4.1\n", Config::Debug::LOG_WIFI);
     }
 }
 
@@ -152,7 +152,7 @@ void WiFiManager::stopAP()
 {
     WiFi.softAPdisconnect(true);
     apEnabled = false;
-    Serial0.println(Config::Debug::LOG_WIFI " AP stopped");
+    Serial0.printf("%s AP stopped\n", Config::Debug::LOG_WIFI);
 
     // Switch back to STA mode only
     WiFi.mode(WIFI_STA);
@@ -163,7 +163,7 @@ void WiFiManager::connectSTA(const String &ssid, const String &pass)
     if (ssid.isEmpty())
         return;
 
-    Serial0.print(Config::Debug::LOG_WIFI " Connecting to ");
+    Serial0.printf("%s Connecting to ", Config::Debug::LOG_WIFI);
     Serial0.println(ssid);
 
     WiFi.disconnect();

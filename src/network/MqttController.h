@@ -38,7 +38,7 @@ void MqttController::begin(PicoMQTT::Server &broker)
 {
     mqttBroker = &broker;
 
-    Serial0.println(Config::Debug::LOG_MQTT_CTRL " Controller initialized");
+    Serial0.printf("%s Controller initialized\n", Config::Debug::LOG_MQTT_CTRL);
 }
 
 void MqttController::update(DeviceState &state)
@@ -61,7 +61,7 @@ void MqttController::update(DeviceState &state)
 
 void MqttController::handleMessage(const char* topic, const char* payload)
 {
-    Serial0.printf(Config::Debug::LOG_MQTT_CTRL " Received: %s -> %s\n", topic, payload);
+    Serial0.printf("%s Received: %s -> %s\n", Config::Debug::LOG_MQTT_CTRL, topic, payload);
 }
 
 void MqttController::publish(const char* topic, const char* payload)
@@ -81,7 +81,7 @@ void MqttController::processMotorCommand(DeviceState &state, const char* payload
 
     if (error)
     {
-        Serial0.printf(Config::Debug::LOG_MQTT_CTRL " Failed to parse motor command: %s\n", error.c_str());
+        Serial0.printf("%s Failed to parse motor command: %s\n", Config::Debug::LOG_MQTT_CTRL, error.c_str());
         return;
     }
 
@@ -91,24 +91,24 @@ void MqttController::processMotorCommand(DeviceState &state, const char* payload
     {
         int speed = doc["speed"] | Config::Motor::MAX_SPEED;
         state.motorSpeed = constrain(speed, 0, Config::Motor::MAX_SPEED);
-        Serial0.printf(Config::Debug::LOG_MQTT_CTRL " Motor forward: speed=%d\n", state.motorSpeed);
+        Serial0.printf("%s Motor forward: speed=%d\n", Config::Debug::LOG_MQTT_CTRL, state.motorSpeed);
     }
     else if (strcmp(action, "backward") == 0)
     {
         int speed = doc["speed"] | Config::Motor::MAX_SPEED;
         state.motorSpeed = constrain(-speed, -Config::Motor::MAX_SPEED, 0);
-        Serial0.printf(Config::Debug::LOG_MQTT_CTRL " Motor backward: speed=%d\n", state.motorSpeed);
+        Serial0.printf("%s Motor backward: speed=%d\n", Config::Debug::LOG_MQTT_CTRL, state.motorSpeed);
     }
     else if (strcmp(action, "stop") == 0)
     {
         state.motorSpeed = 0;
-        Serial0.println(Config::Debug::LOG_MQTT_CTRL " Motor stop");
+        Serial0.printf("%s Motor stop\n", Config::Debug::LOG_MQTT_CTRL);
     }
     else if (strcmp(action, "set") == 0)
     {
         int speed = doc["speed"] | 0;
         state.motorSpeed = constrain(speed, -Config::Motor::MAX_SPEED, Config::Motor::MAX_SPEED);
-        Serial0.printf(Config::Debug::LOG_MQTT_CTRL " Motor set: speed=%d\n", state.motorSpeed);
+        Serial0.printf("%s Motor set: speed=%d\n", Config::Debug::LOG_MQTT_CTRL, state.motorSpeed);
     }
 }
 
@@ -119,19 +119,19 @@ void MqttController::processConfigCommand(DeviceState &state, const char* payloa
 
     if (error)
     {
-        Serial0.printf(Config::Debug::LOG_MQTT_CTRL " Failed to parse config: %s\n", error.c_str());
+        Serial0.printf("%s Failed to parse config: %s\n", Config::Debug::LOG_MQTT_CTRL, error.c_str());
         return;
     }
 
     const char* param = doc["param"] | "";
     int value = doc["value"] | 0;
 
-    Serial0.printf(Config::Debug::LOG_MQTT_CTRL " Config: %s = %d\n", param, value);
+    Serial0.printf("%s Config: %s = %d\n", Config::Debug::LOG_MQTT_CTRL, param, value);
 
     if (strcmp(param, "speed") == 0)
     {
         state.motorSpeed = constrain(value, -Config::Motor::MAX_SPEED, Config::Motor::MAX_SPEED);
-        Serial0.printf(Config::Debug::LOG_MQTT_CTRL " Motor speed set to %d via config\n", state.motorSpeed);
+        Serial0.printf("%s Motor speed set to %d via config\n", Config::Debug::LOG_MQTT_CTRL, state.motorSpeed);
     }
 }
 

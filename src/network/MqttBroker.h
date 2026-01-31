@@ -28,7 +28,7 @@ void MqttBroker::begin(DeviceState &state)
 {
     // Setup MQTT broker
     mqttBroker.begin();
-    Serial0.println(Config::Debug::LOG_MQTT " Broker started on port " + String(Config::Mqtt::PORT));
+    Serial0.printf("%s Broker started on port %d\n", Config::Debug::LOG_MQTT, Config::Mqtt::PORT);
 
     // Initialize controller with broker reference
     controller.begin(mqttBroker);
@@ -45,7 +45,7 @@ void MqttBroker::begin(DeviceState &state)
     // Publish online status
     controller.publish(Config::Mqtt::TOPIC_STATUS, R"({"status":"online"})");
 
-    Serial0.println(Config::Debug::LOG_MQTT " Subscriptions setup complete");
+    Serial0.printf("%s Subscriptions setup complete\n", Config::Debug::LOG_MQTT);
 
     startMDNS();
 }
@@ -57,10 +57,10 @@ void MqttBroker::startMDNS()
         if (MDNS.begin(Config::Mqtt::MDNS_HOSTNAME))
         {
             mdnsStarted = true;
-            Serial0.println("[mDNS] Responder started: " + String(Config::Mqtt::MDNS_HOSTNAME) + ".local");
+            Serial0.printf("[mDNS] Responder started: %s.local\n", Config::Mqtt::MDNS_HOSTNAME);
             // Advertise MQTT service
             MDNS.addService(Config::Mqtt::MDNS_SERVICE, Config::Mqtt::MDNS_PROTOCOL, Config::Mqtt::PORT);
-            Serial0.println("[mDNS] Service advertised: " + String(Config::Mqtt::MDNS_SERVICE) + " on port " + String(Config::Mqtt::PORT));
+            Serial0.printf("[mDNS] Service advertised: %s on port %d\n", Config::Mqtt::MDNS_SERVICE, Config::Mqtt::PORT);
         }
         else
         {
@@ -84,12 +84,6 @@ void MqttBroker::update(DeviceState &state)
         if (!mdnsStarted)
         {
             startMDNS();
-        }
-
-        // Handle mDNS queries
-        if (mdnsStarted)
-        {
-            MDNS.update();
         }
     }
 }
