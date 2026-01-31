@@ -158,7 +158,7 @@ AFDevice/
 │   │   └── App.h          # Main app class, initializes all modules
 │   ├── core/              # Core types and state
 │   │   ├── DeviceState.h  # Shared state struct
-│   │   └── Config.h       # Configuration constants
+│   │   └── Config.h       # Centralized configuration constants (pins, intervals, limits)
 │   ├── hardware/          # Hardware abstraction
 │   │   ├── MotorController.h   # Motor control (GyverMotor2)
 │   │   ├── EncoderReader.h     # Encoder reading (ESP32Encoder)
@@ -238,6 +238,26 @@ AFDevice/
    - AP Name: "AlexFil Developer"
    - IP: 192.168.4.1
    - Web interface available for WiFi configuration
+
+## Configuration
+
+All constants centralized in `src/core/Config.h` using namespace pattern:
+
+```cpp
+#include "../core/Config.h"
+
+// Usage: Config::Pins::MOTOR_PWM, Config::Mqtt::PORT, etc.
+```
+
+**Namespaces:**
+- `Config::Pins` - GPIO pin numbers
+- `Config::Motor` - Speed limits, min duty
+- `Config::WiFi` - AP/STA settings, timeouts
+- `Config::Mqtt` - Broker port, topics, intervals
+- `Config::Debug` - Logging settings, prefixes
+- `Config::System` - Stack sizes, queue sizes
+
+Change values in Config.h to customize without modifying module code.
 
 ## Important Notes
 
