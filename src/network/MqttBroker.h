@@ -5,6 +5,7 @@
 #include <ESPmDNS.h>
 #include <PicoMQTT.h>
 #include "../core/DeviceState.h"
+#include "../core/Config.h"
 #include "MqttController.h"
 
 class MqttBroker
@@ -25,26 +26,26 @@ private:
 
 void MqttBroker::begin(DeviceState &state)
 {
-    // Setup MQTT broker on default port 1883
+    // Setup MQTT broker
     mqttBroker.begin();
-    Serial0.println("[MQTT] Broker started on port 1883");
+    Serial0.println(Config::Debug::LOG_MQTT " Broker started on port " + String(Config::Mqtt::PORT));
 
     // Initialize controller with broker reference
     controller.begin(mqttBroker);
 
     // Subscribe to command topics
-    mqttBroker.subscribe(MqttController::TOPIC_CMD_MOTOR, [&state, this](const char* topic, const char* payload) {
+    mqttBroker.subscribe(Config::Mqtt::TOPIC_CMD_MOTOR, [&state, this](const char* topic, const char* payload) {
         this->controller.processMotorCommand(state, payload);
     });
 
-    mqttBroker.subscribe(MqttController::TOPIC_CMD_CONFIG, [&state, this](const char* topic, const char* payload) {
+    mqttBroker.subscribe(Config::Mqtt::TOPIC_CMD_CONFIG, [&state, this](const char* topic, const char* payload) {
         this->controller.processConfigCommand(state, payload);
     });
 
     // Publish online status
-    controller.publish(MqttController::TOPIC_STATUS, R"({"status":"online"})");
+    controller.publish(Config::Mqtt::TOPIC_STATUS, R"({"status":"online"})");
 
-    Serial0.println("[MQTT] Subscriptions setup complete");
+    Serial0.println(Config::Debug::LOG_MQTT " Subscriptions setup complete");
 
     startMDNS();
 }
@@ -53,13 +54,13 @@ void MqttBroker::startMDNS()
 {
     if (!mdnsStarted)
     {
-        if (MDNS.begin("hub"))
+        if (MDNS.begin(Config::Mqtt::MDNS_HOSTNAME))
         {
             mdnsStarted = true;
-            Serial0.println("[mDNS] Responder started: hub.local");
+            Serial0.println("[mDNS] Responder started: " + String(Config::Mqtt::MDNS_HOSTNAME) + ".local");
             // Advertise MQTT service
-            MDNS.addService("mqtt", "tcp", 1883);
-            Serial0.println("[mDNS] Service advertised: mqtt on port 1883");
+            MDNS.addService(Config::Mqtt::MDNS_SERVICE, Config::Mqtt::MDNS_PROTOCOL, Config::Mqtt::PORT);
+            Serial0.println("[mDNS] Service advertised: " + String(Config::Mqtt::MDNS_SERVICE) + " on port " + String(Config::Mqtt::PORT));
         }
         else
         {
@@ -83,6 +84,12 @@ void MqttBroker::update(DeviceState &state)
         if (!mdnsStarted)
         {
             startMDNS();
+        }
+
+        // Handle mDNS queries
+        if (mdnsStarted)
+        {
+            MDNS.update();
         }
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "../core/DeviceState.h"
+#include "../core/Config.h"
 
 #include "../hardware/EncoderReader.h"
 #include "../hardware/Buttons.h"
@@ -31,7 +32,7 @@ private:
 
 void App::setup()
 {
-    Serial0.begin(115200);
+    Serial0.begin(Config::Debug::BAUD_RATE);
 
     wifi.begin(state);
     web.begin(state);

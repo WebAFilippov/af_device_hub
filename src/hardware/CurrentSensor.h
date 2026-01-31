@@ -1,5 +1,6 @@
 #pragma once
 #include "../core/DeviceState.h"
+#include "../core/Config.h"
 
 class CurrentSensor
 {
@@ -9,19 +10,18 @@ public:
 
 private:
     int last = -999;
-    const int threshold = 20;
 };
 
 void CurrentSensor::begin()
 {
-    analogReadResolution(12);
+    analogReadResolution(Config::Current::ADC_RESOLUTION);
     analogSetAttenuation(ADC_11db);
 }
 
 void CurrentSensor::update(DeviceState &state)
 {
-    int val = analogRead(7);
-    if (abs(val - last) > threshold)
+    int val = analogRead(Config::Pins::CURRENT_ADC);
+    if (abs(val - last) > Config::Current::ADC_THRESHOLD)
     {
         state.currentAdc = val;
         last = val;

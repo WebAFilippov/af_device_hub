@@ -1,6 +1,7 @@
 #pragma once
 #include <EncButton.h>
 #include "../core/DeviceState.h"
+#include "../core/Config.h"
 #include "../network/WiFiManager.h"
 
 class Buttons
@@ -10,22 +11,21 @@ public:
     void update(DeviceState &state, WiFiManager &wifi);
 
 private:
-    Button up{10};
-    Button down{11};
-    Button setup{12};  // Setup button on pin 12
+    Button up{Config::Pins::BTN_UP};
+    Button down{Config::Pins::BTN_DOWN};
+    Button setup{Config::Pins::BTN_SETUP};
 
     bool upWasPressed = false;
     bool downWasPressed = false;
     unsigned long setupButtonPressTime = 0;
     bool setupButtonWasPressed = false;
-    static constexpr unsigned long SETUP_HOLD_TIME = 5000; // 5 seconds
 };
 
 void Buttons::begin()
 {
-    pinMode(10, INPUT_PULLUP);
-    pinMode(11, INPUT_PULLUP);
-    pinMode(12, INPUT_PULLUP);  // Setup button
+    pinMode(Config::Pins::BTN_UP, INPUT_PULLUP);
+    pinMode(Config::Pins::BTN_DOWN, INPUT_PULLUP);
+    pinMode(Config::Pins::BTN_SETUP, INPUT_PULLUP);
 }
 
 void Buttons::update(DeviceState &state, WiFiManager &wifi)
@@ -42,11 +42,11 @@ void Buttons::update(DeviceState &state, WiFiManager &wifi)
 
     if (up.hold())
     {
-        state.motorSpeed = 255;
+        state.motorSpeed = Config::Motor::MAX_SPEED;
     }
     else if (down.hold())
     {
-        state.motorSpeed = -255;
+        state.motorSpeed = -Config::Motor::MAX_SPEED;
     }
     else if (upWasPressed && up.release())
     {
@@ -59,22 +59,22 @@ void Buttons::update(DeviceState &state, WiFiManager &wifi)
         downWasPressed = false;
     }
 
-    // Setup button logic - 5 second hold to enable AP mode
+    // Setup button logic
     if (setup.press())
     {
         setupButtonPressTime = millis();
         setupButtonWasPressed = true;
-        Serial0.println("[BTN] Setup button pressed, hold for 5 seconds...");
+        Serial0.println(Config::Debug::LOG_BTN " Setup button pressed, hold for " + String(Config::Button::SETUP_HOLD_TIME_MS / 1000) + " seconds...");
     }
 
     if (setupButtonWasPressed && setup.hold())
     {
         unsigned long holdDuration = millis() - setupButtonPressTime;
-        if (holdDuration >= SETUP_HOLD_TIME)
+        if (holdDuration >= Config::Button::SETUP_HOLD_TIME_MS)
         {
-            Serial0.println("[BTN] Setup button held for 5 seconds, enabling AP mode");
+            Serial0.println(Config::Debug::LOG_BTN " Setup button held, enabling AP mode");
             wifi.enableSetupMode();
-            setupButtonWasPressed = false; // Reset to prevent multiple triggers
+            setupButtonWasPressed = false;
         }
     }
 
@@ -83,9 +83,9 @@ void Buttons::update(DeviceState &state, WiFiManager &wifi)
         if (setupButtonWasPressed)
         {
             unsigned long holdDuration = millis() - setupButtonPressTime;
-            if (holdDuration < SETUP_HOLD_TIME)
+            if (holdDuration < Config::Button::SETUP_HOLD_TIME_MS)
             {
-                Serial0.printf("[BTN] Setup button released after %lu ms (too short)\n", holdDuration);
+                Serial0.printf(Config::Debug::LOG_BTN " Setup button released after %lu ms (too short)\n", holdDuration);
             }
         }
         setupButtonWasPressed = false;
