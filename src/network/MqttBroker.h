@@ -74,6 +74,8 @@ void MqttBroker::update(DeviceState &state)
     // Only run MQTT when WiFi is connected to save CPU
     if (WiFi.status() == WL_CONNECTED)
     {
+        state.mqttConnected = true;
+        
         // MQTT broker loop
         mqttBroker.loop();
 
@@ -85,5 +87,9 @@ void MqttBroker::update(DeviceState &state)
         {
             startMDNS();
         }
+    }
+    else
+    {
+        state.mqttConnected = false;
     }
 }

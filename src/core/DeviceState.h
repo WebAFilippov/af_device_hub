@@ -9,6 +9,7 @@ struct DeviceState
     bool apActive = false;
     String savedSsid = "";
     IPAddress localIP;
+    bool mqttConnected = false;
 
     // Sensors
     int32_t encoderPos = 0;

@@ -6,6 +6,7 @@
 #include "../hardware/Buttons.h"
 #include "../hardware/MotorController.h"
 #include "../hardware/CurrentSensor.h"
+#include "../hardware/Display.h"
 
 #include "../network/WebServer.h"
 #include "../network/WiFiManager.h"
@@ -28,20 +29,23 @@ private:
     Buttons buttons;
     MotorController motor;
     CurrentSensor current;
+    Display display;
 };
 
 void App::setup()
 {
     Serial0.begin(Config::Debug::BAUD_RATE);
 
+    
     wifi.begin(state);
     web.begin(state);
     mqtt.begin(state);
-
+    
     encoder.begin();
     buttons.begin();
     motor.begin();
     current.begin();
+    display.begin();      
 }
 
 void App::loop()
@@ -55,4 +59,5 @@ void App::loop()
     current.update(state);
 
     motor.update(state);
+    display.update(state);
 }
